@@ -220,6 +220,7 @@ for i = 1:length(biasV)
     data.ASD_narrow_subsampled{i}.fn_mean = mean(data.ASD_narrow_subsampled{i}.fn);
     data.ASD_narrow_subsampled{i}.x = f_samples;
     data.ASD_narrow_subsampled{i}.y = y_sum/n_samples;
+    data.fn_mean(i) = data.ASD_narrow_subsampled{i}.fn_mean;
     
     figure(500+i)
     plot(data.ASD_narrow_subsampled{i}.x,data.ASD_narrow_subsampled{i}.y*1E6,'-')
