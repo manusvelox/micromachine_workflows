@@ -48,7 +48,7 @@ theta_res = interp1(df2(single_ind-1:single_ind+1),thetaspan(single_ind-1:single
 
 
 
-%% rotate data to represent first pass, fit to evaluate phase
+%% rotate data to represent first pass, fit to evaluate asymmetry
 
 
 X_centered_rotated = X_centered.*cos(-1*theta_res) - Y_centered*sin(-1*theta_res);
@@ -59,8 +59,19 @@ V_phasor_processed = X_processed + 1i*Y_processed;
 amp_processed = sqrt(X_processed.^2 + Y_processed.^2);
 phase_processed = angle(V_phasor_processed);
 
-[f_n_processed,~] = parabolic_peak_correct(freq,amp_processed,10,inf);
-phase_error_init = interp1(freq,phase_processed,f_n_processed);
+
+%% fit to middle 3 linewidths
+
+[maxVal,maxI] = max(amp_processed);
+fn0 = freq(maxI);
+lowerHalfPower = max(freq(and(freq<fn0,amp_processed<maxVal/2)));
+upperHalfPower = min(freq(and(freq>fn0,amp_processed<maxVal/2)));
+gamma = upperHalfPower-lowerHalfPower;
+
+
+fitObj = asymLorentzianFit(amp_processed, freq);
+a0 = fitObj.a;
+fn = fitObj.fn;
 
 
 
@@ -76,15 +87,14 @@ ylabel('Imag');
 prettyfig_NB
 
 subplot(2,2,2)
-plot(freq,amp_processed);hold on
-vline(f_n_processed,'r--');
+plot(freq,amp_processed,'.');hold on
+plot(freq,fitObj.handle(freq));
+text(fn,.5,sprintf('a = %.2f',a0))
 xlabel('Freq')
 ylabel('Amp');
 prettyfig_NB
 subplot(2,2,4)
 plot(freq,phase_processed);hold on
-vline(f_n_processed,'r--');
-text(f_n_processed,.5,sprintf('theta = %.2f',phase_error_init))
 xlabel('Freq')
 ylabel('Phase');
 prettyfig_NB
@@ -96,7 +106,7 @@ end
 % set stopping conditions flag
 phase_error = phase_error_init;
 iterCount = 0;
-stoppingCondMet =  or(abs(phase_error) < phaseTol, iterCount > maxIter)
+stoppingCondMet =  or(abs(phase_error) < phaseTol, iterCount > maxIter);
 
 X_processed_current = X_processed;
 Y_processed_current = Y_processed;
@@ -118,7 +128,7 @@ while ~stoppingCondMet
     phase_updated = angle(X_updated+1i*Y_updated);
     
     [f_n_updated,~] = parabolic_peak_correct(freq,amp_updated,10,inf);
-    new_phase_error = interp1(freq,phase_updated,f_n_updated)
+    new_phase_error = interp1(freq,phase_updated,f_n_updated);
     
     X_processed_current = X_updated;
     Y_processed_current = Y_updated;
@@ -126,6 +136,44 @@ while ~stoppingCondMet
    
     iterCount = iterCount + 1;
     stoppingCondMet =  or(abs(new_phase_error) < phaseTol, iterCount > maxIter);
+end
+
+X_processed_iter = X_processed_current;
+Y_processed_iter = Y_processed_current;
+
+%% plot iterated fit
+
+V_phasor_iter = X_processed_iter + 1i*Y_processed_iter;
+amp_iter = abs(V_phasor_iter);
+phase_iter = angle(V_phasor_iter);
+
+[f_n_iter,~] = parabolic_peak_correct(freq,amp_iter,10,inf);
+phase_error_iter = interp1(freq,phase_iter,f_n_iter);
+
+if plotFlag
+f1 = figure(1002);
+f1.Position = [87 231 1239 495];
+subplot(2,2,[1 3])
+plot(X_processed_iter,Y_processed_iter,'.');hold on
+axis equal
+xlabel('Real')
+ylabel('Imag');
+prettyfig_NB
+
+subplot(2,2,2)
+plot(freq,amp_iter);hold on
+vline(f_n_iter,'r--');
+xlabel('Freq')
+ylabel('Amp');
+prettyfig_NB
+subplot(2,2,4)
+plot(freq,phase_iter);hold on
+vline(f_n_iter,'r--');
+text(f_n_iter,.5,sprintf('theta = %.2f',phase_error_iter))
+xlabel('Freq')
+ylabel('Phase');
+prettyfig_NB
+
 end
 
 %%

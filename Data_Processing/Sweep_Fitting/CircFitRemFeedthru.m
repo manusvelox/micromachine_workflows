@@ -48,7 +48,7 @@ theta_res = interp1(df2(single_ind-1:single_ind+1),thetaspan(single_ind-1:single
 
 
 
-%% rotate data to represent first pass, fit to evaluate phase
+%% rotate data to represent first pass, fit to evaluate asymmetry
 
 
 X_centered_rotated = X_centered.*cos(-1*theta_res) - Y_centered*sin(-1*theta_res);
@@ -59,8 +59,21 @@ V_phasor_processed = X_processed + 1i*Y_processed;
 amp_processed = sqrt(X_processed.^2 + Y_processed.^2);
 phase_processed = angle(V_phasor_processed);
 
-[f_n_processed,~] = parabolic_peak_correct(freq,amp_processed,10,inf);
-phase_error_init = interp1(freq,phase_processed,f_n_processed);
+
+%% fit to middle 3 linewidths
+
+[maxVal,maxI] = max(amp_processed);
+fn0 = freq(maxI);
+lowerHalfPower = max(freq(and(freq<fn0,amp_processed<maxVal/2)));
+upperHalfPower = min(freq(and(freq>fn0,amp_processed<maxVal/2)));
+gamma = upperHalfPower-lowerHalfPower;
+
+mask = and(freq > (fn0-gamma), freq < (fn0+gamma));
+
+
+fitObj = asymLorentzianFit(amp_processed(mask), freq(mask));
+a0 = fitObj.a;
+fn = fitObj.fn;
 
 
 
@@ -76,15 +89,14 @@ ylabel('Imag');
 prettyfig_NB
 
 subplot(2,2,2)
-plot(freq,amp_processed);hold on
-vline(f_n_processed,'r--');
+plot(freq,amp_processed,'.');hold on
+plot(freq,fitObj.handle(freq));
+text(fn,0,sprintf('a = %.2f',a0))
 xlabel('Freq')
 ylabel('Amp');
 prettyfig_NB
 subplot(2,2,4)
 plot(freq,phase_processed);hold on
-vline(f_n_processed,'r--');
-text(f_n_processed,.5,sprintf('theta = %.2f',phase_error_init))
 xlabel('Freq')
 ylabel('Phase');
 prettyfig_NB
