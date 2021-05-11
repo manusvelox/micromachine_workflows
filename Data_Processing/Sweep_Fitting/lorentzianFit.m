@@ -1,5 +1,5 @@
 function fitObj = lorentzianFit(varargin)
-%fitObj = asymLorentzianFit(amp, freq)
+%fitObj = lorentzianFit(amp, freq,tolFun,tolX)
 
 %% process inputs
 
@@ -15,26 +15,31 @@ tolX = inputs{4};
 
 %% write out model
 gamma_0 = @(f0,Q) f0/2/Q;
-lorentz = @(f0,Q,A,freq) A./(1 + ((freq-f0)./gamma_0(f0,Q)).^2);
+lorentz = @(f0,Q,A,NF,freq) sqrt((A./(1 + ((freq-f0)./gamma_0(f0,Q)).^2)).^2 + ...
+    NF.^2);
 
 
 
 %% estimate intitial params
+NF0 = mean(amp(1:floor(length(amp)/10)));
 [maxVal,maxI] = max(amp);
 fn0 = freq(maxI);
-lowerHalfPower = max(freq(and(freq<fn0,amp<maxVal/2)));
-upperHalfPower = min(freq(and(freq>fn0,amp<maxVal/2)));
-Q0 = fn0/(upperHalfPower-lowerHalfPower);
+HP_thresh = NF0+(maxVal-NF0)/2;
+lowerHalfPower = max(freq(and(freq<fn0,amp<HP_thresh)));
+upperHalfPower = min(freq(and(freq>fn0,amp<HP_thresh)));
+Q0 = fn0./(upperHalfPower-lowerHalfPower);
 A0 = maxVal;
 
-C0 = [fn0, Q0, A0];
+
+C0 = [fn0, Q0, A0,NF0];
 
 options = optimset('fminsearch');
 options = optimset(options,'TolFun',tolFun);
 options = optimset(options, 'TolX',tolX);
+options = optimset(options, 'Display','none');
 
 
-E = @(C) sum((amp-lorentz(C(1),C(2),C(3),freq)).^2 );
+E = @(C) sum((amp-lorentz(C(1),C(2),C(3),C(4), freq)).^2 );
 C = fminsearch(E,C0,options);
 
 
@@ -42,7 +47,8 @@ C = fminsearch(E,C0,options);
 fitObj.fn = C(1);
 fitObj.Q = C(2);
 fitObj.A = C(3);
-fitObj.handle = @(f) lorentz(C(1),C(2),C(3),f)
+fitObj.NF = C(4);
+fitObj.handle = @(f) lorentz(C(1),C(2),C(3), C(4),f);
 
 
 

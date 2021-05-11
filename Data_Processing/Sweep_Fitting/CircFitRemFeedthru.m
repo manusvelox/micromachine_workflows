@@ -10,7 +10,7 @@ inputs(1:nargin) = varargin;
  
 V_phasor = inputs{1};
 freq = inputs{2};
-phaseTol = inputs{3};
+asymTol = inputs{3};
 maxIter = inputs{4};
 plotFlag = inputs{5};
 
@@ -60,21 +60,13 @@ amp_processed = sqrt(X_processed.^2 + Y_processed.^2);
 phase_processed = angle(V_phasor_processed);
 
 
-%% fit to middle 3 linewidths
-
-[maxVal,maxI] = max(amp_processed);
-fn0 = freq(maxI);
-lowerHalfPower = max(freq(and(freq<fn0,amp_processed<maxVal/2)));
-upperHalfPower = min(freq(and(freq>fn0,amp_processed<maxVal/2)));
-gamma = upperHalfPower-lowerHalfPower;
-
-mask = and(freq > (fn0-gamma), freq < (fn0+gamma));
+%% fit to lorentzian
 
 
-fitObj = asymLorentzianFit(amp_processed(mask), freq(mask));
-a0 = fitObj.a;
-fn = fitObj.fn;
-
+lorentzianFitObj = asymLorentzianFit(amp_processed, freq);
+a0 = lorentzianFitObj.a;
+fn = lorentzianFitObj.fn;
+A = lorentzianFitObj.A;
 
 
 
@@ -90,10 +82,11 @@ prettyfig_NB
 
 subplot(2,2,2)
 plot(freq,amp_processed,'.');hold on
-plot(freq,fitObj.handle(freq));
-text(fn,0,sprintf('a = %.2f',a0))
+plot(freq,lorentzianFitObj.handle(freq));
+text(fn,A/2,sprintf('a = %.5f',a0))
 xlabel('Freq')
 ylabel('Amp');
+title('initial fit');
 prettyfig_NB
 subplot(2,2,4)
 plot(freq,phase_processed);hold on
@@ -106,12 +99,13 @@ end
 %% iterate to make reonance at zero phase
 
 % set stopping conditions flag
-phase_error = phase_error_init;
+asym = a0;
 iterCount = 0;
-stoppingCondMet =  or(abs(phase_error) < phaseTol, iterCount > maxIter);
+stoppingCondMet =  or(abs(asym) < asymTol, iterCount >= maxIter);
 
 X_processed_current = X_processed;
 Y_processed_current = Y_processed;
+gain  = 1;
 
 while ~stoppingCondMet
     
@@ -119,25 +113,26 @@ while ~stoppingCondMet
     Y_processed_current_centered = Y_processed_current;
     
     
-    X_updated_centered = X_processed_current_centered.*cos(2*phase_error) - Y_processed_current_centered*sin(2*phase_error);
-    Y_updated_centered = X_processed_current_centered.*sin(2*phase_error) + Y_processed_current_centered*cos(2*phase_error);
+    X_updated_centered = X_processed_current_centered.*cos(gain*asym) - Y_processed_current_centered*sin(gain*asym);
+    Y_updated_centered = X_processed_current_centered.*sin(gain*asym) + Y_processed_current_centered*cos(gain*asym);
     
     
     X_updated = X_updated_centered +R_fit;
     Y_updated = Y_updated_centered;
     
-    amp_updated = sqrt(X_updated.^2+Y_updated.^2);
-    phase_updated = angle(X_updated+1i*Y_updated);
     
-    [f_n_updated,~] = parabolic_peak_correct(freq,amp_updated,10,inf);
-    new_phase_error = interp1(freq,phase_updated,f_n_updated);
+    %fit to new amplitude
+    amp_updated = sqrt(X_updated.^2+Y_updated.^2);
+    lorentzianFitObj = asymLorentzianFit(amp_updated, freq);
+    asym = lorentzianFitObj.a;
     
     X_processed_current = X_updated;
     Y_processed_current = Y_updated;
     
    
+    
+    stoppingCondMet =  or(abs(asym) < asymTol, iterCount >= maxIter);
     iterCount = iterCount + 1;
-    stoppingCondMet =  or(abs(new_phase_error) < phaseTol, iterCount > maxIter);
 end
 
 X_processed_iter = X_processed_current;
@@ -149,8 +144,7 @@ V_phasor_iter = X_processed_iter + 1i*Y_processed_iter;
 amp_iter = abs(V_phasor_iter);
 phase_iter = angle(V_phasor_iter);
 
-[f_n_iter,~] = parabolic_peak_correct(freq,amp_iter,10,inf);
-phase_error_iter = interp1(freq,phase_iter,f_n_iter);
+
 
 if plotFlag
 f1 = figure(1002);
@@ -163,15 +157,15 @@ ylabel('Imag');
 prettyfig_NB
 
 subplot(2,2,2)
-plot(freq,amp_iter);hold on
-vline(f_n_iter,'r--');
+plot(freq,amp_iter,'.');hold on
+plot(freq,lorentzianFitObj.handle(freq));
+text(fn,A/2,sprintf('a = %.5f',asym))
 xlabel('Freq')
 ylabel('Amp');
+title('iterated fit');
 prettyfig_NB
 subplot(2,2,4)
 plot(freq,phase_iter);hold on
-vline(f_n_iter,'r--');
-text(f_n_iter,.5,sprintf('theta = %.2f',phase_error_iter))
 xlabel('Freq')
 ylabel('Phase');
 prettyfig_NB
@@ -179,7 +173,21 @@ prettyfig_NB
 end
 
 %%
-fitObj = []
+
+fitObj.Cft = YC/(lorentzianFitObj.fn*2*pi);
+fitObj.R = 1./(2*R_fit);
+
+%%
+
+
+
+Q_phase = phaseSlopeQ(phase_iter,freq,0,.8,plotFlag);
+
+fitObj.Q_phase = Q_phase;
+fitObj.Q_amp = lorentzianFitObj.Q;
+fitObj.fn = lorentzianFitObj.fn;
+fitObj.notes = 'R, Cft only valid if amplitude input is an admittance';
+
 
 
 end
