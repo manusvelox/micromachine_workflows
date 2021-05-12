@@ -66,11 +66,13 @@ function sweepdata = ziSweep(dev,startf, stopf, points, quality, plotflag)
             ziDAQ('set', sweephandle, 'sweep/averaging/sample', 20);
             ziDAQ('set', sweephandle, 'sweep/averaging/tc', 25.0000000);
             ziDAQ('set', sweephandle, 'sweep/averaging/time', 0.0800000);
-            ziDAQ('set', sweephandle, 'sweep/maxbandwidth', 50.0000000);
+            ziDAQ('set', sweephandle, 'sweep/maxbandwidth', 100.0000000);
+            ziDAQ('set', sweephandle, 'sweep/bandwidth', 100.0000000);
             ziDAQ('set', sweephandle, 'sweep/bandwidthoverlap', 1);
             ziDAQ('set', sweephandle, 'sweep/order', 8);
             ziDAQ('set', sweephandle, 'sweep/bandwidthcontrol', 2);
             ziDAQ('set', sweephandle, 'sweep/phaseunwrap',1);
+
             
         case 'high'
             ziDAQ('setDouble', ['/' dev '/demods/0/rate'], 100);

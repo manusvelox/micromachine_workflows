@@ -1,6 +1,13 @@
 function   device = ZIConnect_NB( varargin )
 %connect tio lock in, reset settings to basic config
 
+inputs = {[0]};
+inputs(1:nargin) = varargin;
+
+
+ 
+imp50 = inputs{1};
+
 %% connect to lock in 
 
 clear ziDAQ;
@@ -40,7 +47,7 @@ ziDAQ('setInt', ['/' device '/sigouts/*/add'], 0);
 %setup inputs
 ziDAQ('setInt', ['/' device '/sigins/*/diff'], 0);
 ziDAQ('setInt', ['/' device '/sigins/*/ac'], 1);
-ziDAQ('setInt', ['/' device '/sigins/*/imp50'], 0);
+ziDAQ('setInt', ['/' device '/sigins/*/imp50'], imp50);
 
 %turn demod harm to 1 and phase to 0
 ziDAQ('setDouble', ['/' device '/demods/*/harmonic'], 1);

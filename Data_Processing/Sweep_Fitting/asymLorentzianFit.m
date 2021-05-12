@@ -25,7 +25,7 @@ lorentz = @(f0,Q,A,a,NF,freq) sqrt((A./(1 + ((freq-f0)./gamma(f0,a,Q,freq)).^2))
 
 initFitObj = lorentzianFit(amp, freq);
 
-a0 = 0.1;
+a0 = 0.0;
 
 C0 = [initFitObj.fn, initFitObj.Q, initFitObj.A,a0, initFitObj.NF];
 

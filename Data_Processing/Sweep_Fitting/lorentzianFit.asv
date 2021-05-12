@@ -21,27 +21,27 @@ lorentz = @(f0,Q,A,NF,freq) sqrt((A./(1 + ((freq-f0)./gamma_0(f0,Q)).^2)).^2 + .
 
 
 %% estimate intitial params
-NF0 = mean(amp(1:floor(length(amp)/10)));
+NF0 = mean(amp(1:floor(length(amp)/10)))
 [maxVal,maxI] = max(amp);
 fn0 = freq(maxI);
-HP_thresh = NF0+(maxVal-NF0)/2;
-lowerHalfPower = max(freq(and(freq<fn0,amp<HP_thresh)));
-upperHalfPower = min(freq(and(freq>fn0,amp<HP_thresh)));
+HP_thresh = NF0+(maxVal-NF0)/2
+lowerHalfPower = max(freq(and(freq<fn0,amp<HP_thresh)))
+upperHalfPower = min(freq(and(freq>fn0,amp<HP_thresh)))
 
-if isempty(upperHalfPower) 
-    Q0 = fn0./2./abs(lowerHalfPower-fn0);
-elseif isempty(lowerHalfPower)    
-    Q0 = fn0./2./abs(upperHalfPower-fn0); 
-elseif isempty(lowerHalfPower)  && isempty(upperHalfPower)    
+if size(upperHalfPower) == 0  
+    Q0 = fn0./abs(lowerHalfPower)
+elseif size(lowerHalfPower) == 0    
+    Q0 = fn0./(upperHalfPower-lowerHalfPower)   
+elseif size(lowerHalfPower) == 0 & size(upperHalfPower) == 0
     Q0 = 100;
 else
-Q0 = fn0./(upperHalfPower-lowerHalfPower);
+Q0 = fn0./(upperHalfPower-lowerHalfPower)
 end
 
 A0 = maxVal;
 
 
-C0 = [fn0, Q0, A0,NF0];
+C0 = [fn0, Q0, A0,NF0]
 
 options = optimset('fminsearch');
 options = optimset(options,'TolFun',tolFun);

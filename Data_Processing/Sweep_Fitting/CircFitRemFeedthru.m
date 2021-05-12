@@ -1,5 +1,5 @@
 function fitObj = CircFitRemFeedthru(varargin)
-%fitObj = CircFitRemFeedthru(V_phasor, freq,phaseTol,maxIter, plotFlag)
+%fitObj = CircFitRemFeedthru(V_phasor, freq,asymTol,maxIter, plotFlag)
 
 %% process inputs
 
@@ -71,8 +71,9 @@ A = lorentzianFitObj.A;
 
 
 if plotFlag
-f1 = figure(1001);
+f1 = figure(1001);clf
 f1.Position = [87 231 1239 495];
+f1.Name = 'circfit_init';
 subplot(2,2,[1 3])
 plot(X_processed,Y_processed,'.');hold on
 axis equal
@@ -147,8 +148,9 @@ phase_iter = angle(V_phasor_iter);
 
 
 if plotFlag
-f1 = figure(1002);
+f1 = figure(1002);clf
 f1.Position = [87 231 1239 495];
+f1.Name = 'circfit_iterated';
 subplot(2,2,[1 3])
 plot(X_processed_iter,Y_processed_iter,'.');hold on
 axis equal
@@ -174,19 +176,27 @@ end
 
 %%
 
+
+fitObj.lorentzianFitObj = lorentzianFitObj;
+fitObj.V_phasor_feedrem = V_phasor_iter;
+fitObj.amp_feedrem = abs(V_phasor_iter);
+fitObj.phase = angle(V_phasor_iter);
+fitObj.freq = freq;
+
 fitObj.Cft = YC/(lorentzianFitObj.fn*2*pi);
 fitObj.R = 1./(2*R_fit);
+f_peak = parabolic_peak_correct(freq,amp_iter,10,inf)
 
 %%
 
+gamma = f_peak*2*pi/2/lorentzianFitObj.Q
 
-
-Q_phase = phaseSlopeQ(phase_iter,freq,0,.8,plotFlag);
+Q_phase = phaseSlopeQ(phase_iter,freq,f_peak,gamma/8,plotFlag);
 
 fitObj.Q_phase = Q_phase;
 fitObj.Q_amp = lorentzianFitObj.Q;
 fitObj.fn = lorentzianFitObj.fn;
-fitObj.notes = 'R, Cft only valid if amplitude input is an admittance';
+fitObj.notes = 'R, Cft only valid if amplitude input is an admittance. CFT currently broken!';
 
 
 

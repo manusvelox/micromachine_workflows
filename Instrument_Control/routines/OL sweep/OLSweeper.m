@@ -1,9 +1,9 @@
 function sweepData = OLSweeper(varargin)
-%sweepData = OLSweeper(device, Vd, startf, stopf, points, quality ,inputChan, outputChan,imp50 )
+%sweepData = OLSweeper(device, Vd, startf, stopf, points, quality ,inputChan, outputChan,imp50,plotflag )
 
 
 
-inputs = {'dev717',0,10E3,10E6,1000, 'med',0,0,0};
+inputs = {'dev717',0,10E3,10E6,1000, 'med',0,0,0,1};
 inputs(1:nargin) = varargin;
 
 
@@ -17,6 +17,7 @@ quality = inputs{6};
 inputChan = inputs{7};
 outputChan = inputs{8};
 imp50 = inputs{9};
+plotflag = inputs{10};
 
 %% setup lockin
 
@@ -54,7 +55,7 @@ ziDAQ('setDouble',['/' device '/sigouts/' num2str(outputChan) '/enables/0'], 1);
 
 ziDAQ('setInt',['/' device '/sigouts/' num2str(outputChan) '/on'], 1);
 pause(.5);
-zisweepdata = ziSweep(device,startf, stopf, points, quality, 0);
+zisweepdata = ziSweep(device,startf, stopf, points, quality, plotflag);
 ziDAQ('setInt',['/' device '/sigouts/' num2str(outputChan) '/on'], 0);
 
 %% process

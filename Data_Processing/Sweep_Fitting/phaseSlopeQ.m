@@ -1,5 +1,5 @@
 function Q_phase = phaseSlopeQ(varargin)
-%Q_phase = phaseSlopeQ(phase,freq,phaseRes,phaseFit,plotFlag)
+%Q_phase = phaseSlopeQ(phase,freq,phaseRes,freqFit,plotFlag)
 
 %% process inputs
 
@@ -10,16 +10,16 @@ inputs(1:nargin) = varargin;
  
 phase = inputs{1};
 freq = inputs{2};
-phaseRes = inputs{3};
-phaseFit = inputs{4};
+freqRes = inputs{3};
+freqFit = inputs{4};
 plotFlag = inputs{5};
 
 %% Analyze phase slope
 
 
-mask = phase>(phaseRes - phaseFit/2) &  phase<(phaseRes + phaseFit/2);
-mask2 = phase>(phaseRes - phaseFit*1.5) &  phase<(phaseRes +phaseFit*1.5);
-fn = interp1(phase,freq,phaseRes);
+mask = freq>(freqRes - freqFit/2) &  freq<(freqRes + freqFit/2);
+mask2 = freq>(freqRes - freqFit*1.5) &  freq<(freqRes +freqFit*1.5);
+fn = freqRes;
 
 phase_lin = phase(mask);
 freq_lin = freq(mask);
@@ -30,7 +30,8 @@ Q_phase = abs(dphi_df/2*fn);
 
 %plot phase slope
 if plotFlag
-figure(200);clf
+f2 = figure(200);clf
+f2.Name = 'phaseSlopeQ';
 plot(fnspan-fn,polyvaln(polymodel,fnspan),'r-');hold on;
 plot(freq-fn,phase,'b.');hold on;
 plot(freq_lin-fn,phase_lin,'g.');hold on;
