@@ -1,7 +1,7 @@
 clc;clear;close all;
 
 
-filename='6_9_20_HD16_PBL111_2_Die5_Ret10_400um_2elec_CLsweep_Vbsweep_V2max45mV_switched_Dr_Sen';
+filename='5_25_21_HD16_PBL111_1_GDV9_DETF_P1_CLsweep1_test';
 formatOut = 'dd-mmm-yyyy';
 ds = datestr(datetime('now'),formatOut);
 [contfolder,folder,ext] = fileparts(pwd);
@@ -10,8 +10,8 @@ fullfilename=fullfile(dirname,filename);
 mkdir(dirname);
 
 
-data.notes = 'mPCBN6. setup with full elecs each side. AMP: LFSAV2 onboard';
-data.device = 'HD16_PBL111_2_Die5_Ret10_400um_2elec';
+data.notes = 'mPCBN6. setup with full elecs each side. AMP: LFBA2 onboard';
+data.device = 'HD16_PBL111_1_GDV9_DETF_P1';
 data.startTime = datetime('now');
 data.endTime = 'incomplete';
 
