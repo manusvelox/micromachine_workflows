@@ -1,12 +1,12 @@
 function   device = ZIConnect_NB( varargin )
 %connect tio lock in, reset settings to basic config
 
-inputs = {[0]};
+inputs = {[0],[0]};
 inputs(1:nargin) = varargin;
 
 
- 
-imp50 = inputs{1};
+config = inputs{1}; 
+imp50 = inputs{2};
 
 %% connect to lock in 
 
@@ -36,6 +36,7 @@ device = ziAutoDetect();
 
 %% setup measurment config
 
+if config
 %turn everything off
 ziDAQ('setInt',['/' device '/sigouts/*/on'], 0);
 ziDAQ('setDouble',['/' device '/sigouts/*/enables/*' ], 0);
@@ -65,5 +66,7 @@ ziDAQ('setInt', ['/' device '/demods/0/enable'], 1);
 %turn off PLLs
 ziDAQ('setInt',['/' device '/PLLS/*/Enable'], 0);
 
+
+end
 end
 
