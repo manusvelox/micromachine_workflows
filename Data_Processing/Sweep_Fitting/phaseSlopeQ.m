@@ -1,5 +1,5 @@
 function Q_phase = phaseSlopeQ(varargin)
-%Q_phase = phaseSlopeQ(phase,freq,phaseRes,freqFit,plotFlag)
+%Q_phase = phaseSlopeQ(phase,freq,freqRes,freqFit,plotFlag)
 
 %% process inputs
 
@@ -30,7 +30,7 @@ Q_phase = abs(dphi_df/2*fn);
 
 %plot phase slope
 if plotFlag
-f2 = figure(200);clf
+f2 = figure(999);clf
 f2.Name = 'phaseSlopeQ';
 plot(fnspan-fn,polyvaln(polymodel,fnspan),'r-');hold on;
 plot(freq-fn,phase,'b.');hold on;
