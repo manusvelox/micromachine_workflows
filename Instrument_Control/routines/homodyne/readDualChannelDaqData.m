@@ -19,8 +19,8 @@ function [ CHA, CHB ] = readDualChannelDaqData( fileName )
     
     
     % Extract channels
-    CHA = dataVolts(1:2:end);
-    CHB = dataVolts(2:2:end);
+    CHA = transpose(dataVolts(1:2:end));
+    CHB = transpose(dataVolts(2:2:end));
     
     clear dataVolts;
     clear rawData;
