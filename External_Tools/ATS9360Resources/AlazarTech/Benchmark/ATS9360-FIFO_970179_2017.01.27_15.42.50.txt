@@ -1,0 +1,28 @@
+AlazarTech Bus Benchmark
+System             	ATS9360-FIFO
+Samples Per Transfer 	10485760
+Transfers Per Acquisition 	1000
+Enabled Channels   	2
+Benchmark Start    	1/27/2017 3:42:36 PM
+Benchmark End      	1/27/2017 3:42:50 PM
+Benchmark Time     	13.74 s
+Bytes To Transfer  	39.06 G
+Bytes Transferred  	39.06 G
+Average Transfer Rate (bytes/sec) 	3.052 G
+
+Time sec           	Bytes per sec
+--------           	-------------
+1.108              	3.028e+009
+2.200              	3.073e+009
+3.307              	3.031e+009
+4.399              	3.073e+009
+5.507              	3.066e+009
+6.599              	3.073e+009
+7.706              	3.031e+009
+8.798              	3.073e+009
+9.906              	3.028e+009
+10.998             	3.073e+009
+12.106             	3.028e+009
+13.198             	3.073e+009
+
+
