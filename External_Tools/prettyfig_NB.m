@@ -39,7 +39,7 @@ function prettyfig_NB(varargin)
 
 
 %     yl=ylim(h(ax_i)); % retrieve auto y-limits
-     axis(h(ax_i), 'tight');   % set tight range
+%      axis(h(ax_i), 'tight');   % set tight range
 %     ylim(h(ax_i),[-inf inf])  % restore y limits 
 
     set(findall(h(ax_i), 'Type', 'Line'),'LineWidth',LW);

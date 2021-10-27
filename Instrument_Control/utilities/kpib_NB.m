@@ -12,7 +12,7 @@
 %
 
 %% Introduction
-function retval = kpib(instrument, GPIB, command, value, channel, aux, verbose)
+function retval = kpib_NB(instrument, GPIB, command, value, channel, aux, verbose)
 %RETVAL = KPIB(INSTRUMENT, GPIB, COMMAND, VALUE, CHANNEL, AUX, VERBOSE)
 %  KPIB: Kenny-Purpose Interface Bus
 % v4.88 [NI] MH Apr2010
@@ -85,6 +85,7 @@ versionstr='kpib.m version 4.88 [NI] (May2010)';
 % 'HP_8753ES'  HP 8753ES S-Parameter Network Analyzer
 % 'AG_E5071B'  Agilent E5070B/E5071B RF Network Analyzer
 % 'HP_8560A'   HP 8560A Spectrum Analyzer
+% 'KEY_N9020A  Keysight Signal Analyzer 
 %
 %   Oscilloscopes
 %
@@ -10171,6 +10172,316 @@ end %%%%% end SI_9700
 
 
 % %%%%%
+
+%% 'KEY_N9020A' HP Vector Signal Analyzer
+
+% In general, these commands assume that the analyzer is setup for Network
+%  measurements, for example by recalling the state file "NA_1p2M.sta".
+% Valid Commands:
+% 'mark2peak' Set Marker peak tracking to VALUE 'on' or 'off' for CHANNEL.
+%              Default channel is 1.
+% 'peaktrack' Same as 'mark2peak'.
+
+% 'marker?'   (Alternate query form) Returns the markey position for CHANNEL.
+%              Returns x & y values.
+% 'center'    Set the center frequency to VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns center frequency in Hz.
+% 'span'      Set the frequency sweep span VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'start'     Set the frequency sweep start VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'stop'      Set the frequency sweep stop VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'getdata'   Download the curr-2ent data trace from the analyzer. Data is
+%              returned as a structure with fields x and y for the
+%              specified CHANNEL. If AUX is one of a family of units
+%              {'am','angl','freq','pow','time'}, then the units for the
+%              data will also be returned. Default CHANNEL is 1. If VALUE
+%              is 'x' or 'y', only that data is returned in a single
+%              column array.
+% 'complete?' Query status byte (SERS). If bit 0 == 1, operation is
+%              complete. Must use 'complete' *before* command of interest
+%              for polling. Returns a decimal value equal to the binary
+%              byte value. See manual p18,36.
+% 'abort'
+
+
+if (strcmpi(instrument, 'KEY_N9020A') || strcmpi(instrument, 'all'))
+    % open a GPIB port for the instrument
+    io = port(GPIB, instrument, 24*4097, verbose); % buffer size 24*4097 for downloading data
+    if (io ~=0) && (strcmp(get(io,'Status'),'open') ~=0)
+
+
+        switch command
+            
+            case {'mark2peak','peaktrack'}
+                if ~(any(channel==[1 2 3 4]))
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Default channel 1 set for mark2peak.\n'); end
+                    channel = 1; % Default channel is 1.
+                end
+                switch value
+                    case 'on'
+                        fprintf(io, 'CALC:MARK%d:MAX:TRAC ON', channel);
+                    case 'off'
+                        fprintf(io, 'CALC:MARK%d:MAX:TRAC OFF', channel);
+                end
+
+
+            case 'marker?'
+                if ~(any(channel==[1 2 3 4]))
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Default channel 1 marker.\n'); end
+                    value = 1; % Default channel is 1.
+                end
+                fprintf(io, 'CALC:MARK%d:X?',value);
+                retval.x = fscanf(io,'%f');
+                if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Channel %d marker x: %f\n',value,retval.x); end
+                fprintf(io, 'CALC:MARK%d:Y?',value);
+                retval.y = fscanf(io,'%f');
+                if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Channel %d marker y: %f\n',value,retval.y); end
+
+            case 'center' % manual p307
+                % the query returns the center frequency.
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:CENT?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Center at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Center set to %g\n',value); end
+                    fprintf(io,'FREQ:CENT %.3f',value);
+                end
+
+            case 'span'
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:SPAN?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Span at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Span set to %g\n',value); end
+                    fprintf(io,'FREQ:SPAN %.3f',value);
+                end
+
+            case 'start' % manual p321
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:START?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep start at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep start set to %g\n',value); end
+                    fprintf(io,'FREQ:START %.3f',value);
+                end
+
+            case 'stop' % manual p324
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:STOP?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep stop at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep stop set to %g\n',value); end
+                    fprintf(io,'FREQ:STOP %.3f',value);
+                end
+
+
+            case 'getdata'
+                % did the user specify a channel? If not, or if channel is invalid,
+                %  default to channel 1
+                if ~(any(channel == [1 2 3 4]))
+                %if ~(isequal(channel,1) | isequal(channel,2) | isequal(channel,3) | isequal(channel,4))
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Default channel 1 data.\n'); end
+                    channel = 1;
+                end
+                
+                fprintf(io, 'TRAC? TRAC%d', channel);
+                data = fscanf(io);
+                raw = sscanf([data,','],'%e,');
+                retval = truncx(raw);
+                
+                
+
+
+                
+            case 'complete?' % return Status Byte
+                fprintf(io,'*OPC?');
+                esr = fscanf(io);
+                retval = str2num(esr);
+                if verbose >= 2
+                    if retval > 0
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                    else
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                    end
+                end
+                    
+
+            case {'abort','restart'} % "pressing Meas Restart"
+                fprintf(io,'ABORT');
+
+                
+            otherwise
+                if verbose >= 1, fprintf('kpib_NB/KEY_N9020A: Error, command not supported. ["%s"]\n',command); end
+
+        end % commands
+                
+    else % catch incorrect address errors
+       if verbose >= 1, fprintf('kpib/%s: ERROR: No instrument at GPIB %d\n',instrument,GPIB); end
+       retval=0;
+    end
+    
+    validInst = 1;    
+ end % end 
+ 
+ %% 'KEY_N9020A' HP Vector Signal Analyzer
+
+% Valid Commands:
+% 'mark2peak' Set Marker peak tracking to VALUE 'on' or 'off' for CHANNEL.
+%              Default channel is 1.
+% 'peaktrack' Same as 'mark2peak'.
+
+% 'marker?'   (Alternate query form) Returns the markey position for CHANNEL.
+%              Returns x & y values.
+% 'center'    Set the center frequency to VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns center frequency in Hz.
+% 'span'      Set the frequency sweep span VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'start'     Set the frequency sweep start VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'stop'      Set the frequency sweep stop VALUE. Units of Hz.
+%              Query with VALUE = 'query', returns span in Hz.
+% 'getdata'   Download the curr-2ent data trace from the analyzer. Data is
+%              returned as a structure with fields x and y for the
+%              specified CHANNEL. If AUX is one of a family of units
+%              {'am','angl','freq','pow','time'}, then the units for the
+%              data will also be returned. Default CHANNEL is 1. If VALUE
+%              is 'x' or 'y', only that data is returned in a single
+%              column array.
+% 'complete?' Query status byte (SERS). If bit 0 == 1, operation is
+%              complete. Must use 'complete' *before* command of interest
+%              for polling. Returns a decimal value equal to the binary
+%              byte value. See manual p18,36.
+% 'abort'
+
+
+if (strcmpi(instrument, 'KEY_N9020A') || strcmpi(instrument, 'all'))
+    % open a GPIB port for the instrument
+    io = port(GPIB, instrument, 24*4097, verbose); % buffer size 24*4097 for downloading data
+    if (io ~=0) && (strcmp(get(io,'Status'),'open') ~=0)
+
+
+        switch command
+            
+            case {'mark2peak','peaktrack'}
+                if ~(any(channel==[1 2 3 4]))
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Default channel 1 set for mark2peak.\n'); end
+                    channel = 1; % Default channel is 1.
+                end
+                switch value
+                    case 'on'
+                        fprintf(io, 'CALC:MARK%d:MAX:TRAC ON', channel);
+                    case 'off'
+                        fprintf(io, 'CALC:MARK%d:MAX:TRAC OFF', channel);
+                end
+
+
+            case 'marker?'
+                if ~(any(channel==[1 2 3 4]))
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Default channel 1 marker.\n'); end
+                    value = 1; % Default channel is 1.
+                end
+                fprintf(io, 'CALC:MARK%d:X?',value);
+                retval.x = fscanf(io,'%f');
+                if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Channel %d marker x: %f\n',value,retval.x); end
+                fprintf(io, 'CALC:MARK%d:Y?',value);
+                retval.y = fscanf(io,'%f');
+                if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Channel %d marker y: %f\n',value,retval.y); end
+
+            case 'center' % manual p307
+                % the query returns the center frequency.
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:CENT?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Center at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Center set to %g\n',value); end
+                    fprintf(io,'FREQ:CENT %.3f',value);
+                end
+
+            case 'span'
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:SPAN?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Span at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Span set to %g\n',value); end
+                    fprintf(io,'FREQ:SPAN %.3f',value);
+                end
+
+            case 'start' % manual p321
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:START?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep start at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep start set to %g\n',value); end
+                    fprintf(io,'FREQ:START %.3f',value);
+                end
+
+            case 'stop' % manual p324
+                if isequal(value,'query') || isequal(value,'?')
+                    fprintf(io,'FREQ:STOP?');
+                    retval = fscanf(io,'%f');
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep stop at %g\n',retval); end
+                else
+                    if verbose >= 2, fprintf(1, 'kpib_NB/KEY_N9020A: Sweep stop set to %g\n',value); end
+                    fprintf(io,'FREQ:STOP %.3f',value);
+                end
+
+
+            case 'getdata'
+                % did the user specify a channel? If not, or if channel is invalid,
+                %  default to channel 1
+                if ~(any(channel == [1 2 3 4]))
+                %if ~(isequal(channel,1) | isequal(channel,2) | isequal(channel,3) | isequal(channel,4))
+                    if verbose >= 2, fprintf('kpib_NB/KEY_N9020A: Default channel 1 data.\n'); end
+                    channel = 1;
+                end
+                
+                fprintf(io, 'TRAC? TRAC%d', channel);
+                data = fscanf(io);
+                raw = sscanf([data,','],'%e,');
+                retval = truncx(raw);
+                
+                
+
+
+                
+            case 'complete?' % return Status Byte
+                fprintf(io,'*OPC?');
+                esr = fscanf(io);
+                retval = str2num(esr);
+                if verbose >= 2
+                    if retval > 0
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                    else
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                    end
+                end
+                    
+
+            case {'abort','restart'} % "pressing Meas Restart"
+                fprintf(io,'ABORT');
+
+                
+            otherwise
+                if verbose >= 1, fprintf('kpib_NB/KEY_N9020A: Error, command not supported. ["%s"]\n',command); end
+
+        end % commands
+                
+    else % catch incorrect address errors
+       if verbose >= 1, fprintf('kpib/%s: ERROR: No instrument at GPIB %d\n',instrument,GPIB); end
+       retval=0;
+    end
+    
+    validInst = 1;    
+ end % end KEY_N9020A
 %% 'FLK_290' Fluke 290 Series Waveform generator
 % The Fluke 294 arbitrary waveform generator has 4 output channels.
 % This version (kpib v4.8) does not include support for arbitrary
