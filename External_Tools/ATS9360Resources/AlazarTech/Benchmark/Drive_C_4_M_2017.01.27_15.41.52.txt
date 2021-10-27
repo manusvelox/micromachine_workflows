@@ -1,0 +1,16 @@
+AlazarTech Disk Benchmark
+Drive Name         	C:
+Bytes Per Block    	4096 K
+Blocks Per File    	100
+Benchmark Start    	1/27/2017 3:41:51 PM
+Benchmark End      	1/27/2017 3:41:52 PM
+Benchmark Time     	1.123 s
+Bytes To Write     	400 M
+Bytes Written      	400 M
+Average Write Speed (bytes/sec) 	373.5 M
+
+Time (sec)         	Write Speed
+--------           	-------------
+1.014              	3.64e+008
+
+
