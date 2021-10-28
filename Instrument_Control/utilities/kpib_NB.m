@@ -105,6 +105,7 @@ versionstr='kpib.m version 4.88 [NI] (May2010)';
 % 'AG_33250A'  Agilent 33250A 80 MHz Function generator
 % 'SRS_DS345'  Stanford Research Systems DS345 30 MHz function generator
 % 'FLK_290'    Fluke 290 series (291, 292, 294) arbitrary waveform generators
+% 'AG_E4432B'  Agilent E4432B 3GHz function generator
 %
 %   Power Supplies
 %
@@ -2903,6 +2904,59 @@ if (strcmpi(instrument, 'HP_53132A') || strcmpi(instrument, 'all'))
     
     validInst = 1;    
  end % end HP_53132A
+ 
+%% 'AG_E4432B' Agilent 3GHz Function Generator
+%RETVAL = KPIB('INSTRUMENT', GPIB, 'COMMAND', VALUE, CHANNEL, AUX, VERBOSE)
+% Valid instructions:
+%
+% 'clear'          clear state
+% 'reset'          reset instrument to defaults
+% 'freq'           Set CW frequency
+% 'amp','pow'      set output amplitude in dBm
+% 'off'           turn off output
+% 'on'            turn on output
+%
+if (strcmpi(instrument, 'AG_E4432B') || strcmpi(instrument, 'all'))
+    io = port(GPIB, instrument, 0, verbose);
+    if (io ~=0) && (strcmp(get(io,'Status'),'open') ~=0)
+
+        if channel==0 && verbose >=1
+            fprintf(1, 'kpib/AG_E4432B: WARNING: CHANNEL (output amplitude) is 0\n');
+        end
+            
+        switch command
+            case 'clear'
+                fprintf(io,'*CLS');
+            case 'reset'
+                fprintf(io,'*RST');
+                
+            case {'freq','frequency'}
+                fprintf(io,'FREQ %d',value);
+                if verbose >= 2, fprintf('kpib/AG_E4432B: Output frequency set to %g Hz\n',value); end
+            
+            case {'pow','power','amplitude','amp'} 
+                fprintf(io,'POW %d',value);
+                if verbose >= 2, fprintf('kpib/AG_E4432B: Output amplitude set to %g dBm\n',value); end
+
+            case 'off'
+                fprintf(io, 'OUTP OFF'); % Disables all outputs.
+                if verbose >= 2, fprintf(1, 'Outputs off.\n'); end
+            case 'on'
+                fprintf(io, 'OUTP ON'); % Enables all outputs.
+                if verbose >= 2, fprintf(1, ' Outputs on.\n'); end
+            otherwise
+                if verbose >= 1, fprintf('kpib/AG_E4432B: Error, command not supported. ["%s"]\n',command); end
+        end
+                
+    else % catch incorrect address errors
+       if verbose >= 1, fprintf('kpib/%s: ERROR: No instrument at GPIB %d\n',instrument,GPIB); end
+       retval=0;
+    end
+    
+    validInst = 1;    
+ end % end AG_E4432B
+
+ 
 
 %% 'HP_33120A' Agilent Function Generator
 %RETVAL = KPIB('INSTRUMENT', GPIB, 'COMMAND', VALUE, CHANNEL, AUX, VERBOSE)
