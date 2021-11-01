@@ -43,9 +43,12 @@ ind = zci(df2);
 mask1 = and(ind>(np/5),ind<(np-np/5));
 single_ind = ind(mask1);
 
+figure(789);
+plot(theta,'*')
+
 
 theta_res = interp1(df2(single_ind-1:single_ind+1),thetaspan(single_ind-1:single_ind+1),0);
-
+theta_res = (max(theta) + min(theta))/2;
 
 
 %% rotate data to represent first pass, fit to evaluate asymmetry
@@ -196,6 +199,7 @@ Q_phase = phaseSlopeQ(phase_iter,freq,f_peak,gamma/8,plotFlag);
 fitObj.Q_phase = Q_phase;
 fitObj.Q_amp = lorentzianFitObj.Q;
 fitObj.fn = lorentzianFitObj.fn;
+fitObj.gamma = gamma;
 fitObj.notes = 'R, Cft only valid if amplitude input is an admittance. CFT currently broken!';
 
 

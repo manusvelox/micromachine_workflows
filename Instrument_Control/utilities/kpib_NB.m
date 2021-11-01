@@ -10252,9 +10252,9 @@ end %%%%% end SI_9700
 %              is 'x' or 'y', only that data is returned in a single
 %              column array.
 % 'complete?' Query status byte (SERS). If bit 0 == 1, operation is
-%              complete. Must use 'complete' *before* command of interest
-%              for polling. Returns a decimal value equal to the binary
-%              byte value. See manual p18,36.
+% 
+% 'status?' Query status byte (SERS). If bit 0 == 1, operation is
+% 
 % 'abort'
 
 
@@ -10265,6 +10265,48 @@ if (strcmpi(instrument, 'KEY_N9020A') || strcmpi(instrument, 'all'))
 
 
         switch command
+            case 'average'
+                switch value
+                    case {'numaverages?'} % return the current average num setting
+                        fprintf(io, 'AVER:COUN?');
+                        retval = fscanf(io,'%f');
+                        if verbose >=2, fprintf(1, 'kpib/KEY_N9020A: Number of measurements to average: %d\n',retval); end
+                    case 'restart'
+                        fprintf(io, 'AVER:CLE'); % note that this does not seem to have exactly the same effect as the front panel key;
+                                                    % the *WAI command seems to be separate somehow
+                        if verbose >=2, fprintf(1, 'kpib/KEY_N9020A: Restarting averaging\n'); end
+                    case {'wait','finish','complete'}
+
+                        
+                            % wait for averaging to complete
+                            % Polls Operational Status Register, see manual p19
+                            fprintf(io, 'AVER:COUN?'); % how many averages?
+                            ac = fscanf(io,'%f');
+                            pause(1); % averaging register does not appear to set immediately??
+                            fprintf(io,'STAT:OPER:COND?'); % are we averaging now?
+                            c1 = fscanf(io,'%f'); c=1;
+                            if c1 == 24
+                                if verbose >=2, fprintf(1, 'kpib/KEY_N9020A: Waiting for Averaging to finish (%d measurements)\n',ac); end
+                            elseif c1 ~= 0
+                                if verbose >=1, fprintf(1, 'kpib/KEY_N9020A: Warning: Unexpected Operational Status Register value: %i\n',c1); end
+                            end
+                            while c
+                                fprintf(io,'STAT:OPER:COND?');
+                                c = fscanf(io,'%f');
+                                pause(1);
+                            end
+                            if verbose >=2, fprintf(1, 'kpib/KEY_N9020A: Averaging complete.\n'); end
+
+                        
+                        
+                    otherwise % set the number of measurements to average
+                        if isnumeric(value) && value > 0
+                            if value > 0
+                                fprintf(io, 'AVER:COUN %d', value);
+                                if verbose >=2, fprintf(1, 'kpib/KEY_N9020A: Averaging factor set to %d\n',value); end
+                            end
+                        end
+                end
             
             case {'mark2peak','peaktrack'}
                 if ~(any(channel==[1 2 3 4]))
@@ -10386,18 +10428,39 @@ if (strcmpi(instrument, 'KEY_N9020A') || strcmpi(instrument, 'all'))
 
                 
             case 'complete?' % return Status Byte
-                fprintf(io,'*OPC?');
+                fprintf(io,'*OPC');
+                pause(1);
+                status = 0;
+                while ~status
+                fprintf(io,'*ESR?');
+                esr = fscanf(io);
+                retval = str2num(esr);
+                status = logical(retval);
+                pause(0.5);
+                end
+                
+            
+
+                if verbose >= 2
+                    if retval > 0
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                    else
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation incomplete.\n');
+                    end
+                end
+                    
+            case 'status?' % return Status Byte
+                fprintf(io,'*STB?');
                 esr = fscanf(io);
                 retval = str2num(esr);
                 if verbose >= 2
                     if retval > 0
                         fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
                     else
-                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation complete.\n');
+                        fprintf(1, 'kpib_NB/KEY_N9020A: Operation incomplete.\n');
                     end
                 end
                     
-
             case {'abort'} % "pressing Meas Restart"
                 fprintf(io,'ABORT');
 

@@ -16,7 +16,7 @@ tolX = inputs{4};
 %% write out model
 gamma_0 = @(f0,Q) f0/2/Q;
 gamma = @(f0,a,Q,freq) 2*gamma_0(f0,Q)./(1+ exp(a*(freq-f0)));
-lorentz = @(f0,Q,A,a,NF,freq) sqrt((A./(1 + ((freq-f0)./gamma(f0,a,Q,freq)).^2)).^2+...
+lorentz = @(f0,Q,A,a,NF,freq) sqrt((A^2./(1 + ((freq-f0)./gamma(f0,a,Q,freq)).^2))+...
     NF.^2);
 
 
@@ -46,6 +46,7 @@ fitObj.Q = C(2);
 fitObj.A = C(3);
 fitObj.a = C(4);
 fitObj.NF = C(5);
+fitObj.gamma = C(1)*2*pi/2/ C(2);
 fitObj.handle = @(f) lorentz(C(1),C(2),C(3),C(4),C(5),f);
 
 
