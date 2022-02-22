@@ -188,11 +188,11 @@ fitObj.freq = freq;
 
 fitObj.Cft = YC/(lorentzianFitObj.fn*2*pi);
 fitObj.R = 1./(2*R_fit);
-f_peak = parabolic_peak_correct(freq,amp_iter,10,inf)
+f_peak = parabolic_peak_correct(freq,amp_iter,10,inf);
 
 %%
 
-gamma = f_peak*2*pi/2/lorentzianFitObj.Q
+gamma = f_peak*2*pi/2/lorentzianFitObj.Q;
 
 Q_phase = phaseSlopeQ(phase_iter,freq,f_peak,gamma/8,plotFlag);
 
