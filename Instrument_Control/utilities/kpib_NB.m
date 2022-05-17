@@ -10760,6 +10760,12 @@ if value > ioInBuffsize
     ioInBuffsize = value;
 end
 
+if isequal(instrument,'KEY_N9020A')
+    ioInBuffsize       = 200000*16; %Buffer size for 50000 numbers of 1 byte each.
+    ioTimout           = 10;       %100 % May need to increase timeout for automatic data collection.
+end
+
+
 %% port: serial port instrument
 % is this a GPIB instrument or a serial instrument?
 
