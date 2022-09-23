@@ -3000,9 +3000,9 @@ if (strcmpi(instrument, 'HP_33120A') || strcmpi(instrument, 'all'))
     io = port(GPIB, instrument, 0, verbose);
     if (io ~=0) && (strcmp(get(io,'Status'),'open') ~=0)
 
-        if channel==0 && verbose >=1
-            fprintf(1, 'kpib/HP_33120A: WARNING: CHANNEL (output amplitude) is 0\n');
-        end
+%         if channel==0 && verbose >=1
+%             fprintf(1, 'kpib/HP_33120A: WARNING: CHANNEL (output amplitude) is 0\n');
+%         end
             
         switch command
             case 'init'
@@ -3104,6 +3104,11 @@ if (strcmpi(instrument, 'HP_33120A') || strcmpi(instrument, 'all'))
                         if isnumeric(channel) && channel >= 0
                             fprintf(io,'BM:PHASE %d',channel);
                             if verbose >= 2, fprintf(1, 'kpib/AG_33120A: Burst mode set for %d degrees phase.\n',channel); end
+                        end
+                    case 'rate'
+                        if isnumeric(channel) && channel >= 0
+                            fprintf(io,'BM:INT:RATE %d',channel);
+                            if verbose >= 2, fprintf(1, 'kpib/AG_33120A: Burst mode set for %d Hz Rate.\n',channel); end
                         end
                     otherwise
                         if isnumeric(value) && value > 0 && value < 50e3
