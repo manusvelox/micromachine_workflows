@@ -50,7 +50,6 @@ end
 %% setup burst generator
 addr = 'USB0::0xF4EC::0x1102::SDG2XCAC6R0543::0::INSTR';
 VISA_control_NB('SDG_2000X', addr,'reset');
-
 VISA_control_NB('SDG_2000X', addr,'output','off',1);
 VISA_control_NB('SDG_2000X', addr,'output','load','HIZ');
 
@@ -67,7 +66,6 @@ VISA_control_NB('SDG_2000X', addr,'burst','time',1 ,burstparams.Ncyc);
 VISA_control_NB('SDG_2000X', addr,'burst','period',1 ,burstparams.BurstPeriod);
 
 %% Setup DAC
-
 
 setADC.channels             = 'CH_AB';        
 setADC.triggerOutDelay      = 0; %[fraction of total sample time]
@@ -92,12 +90,13 @@ progressWinHandle = waitbar(0, ...
                         sprintf('Captured %i/%i streams',0,numAquisitions));
 progressWinHandle.Position = [5.995862068965517e+02 2.507586206896552e+02 270 55.862068965517267];
 
+%setup variables 
 if save_all_pulses
     allPulseCell = {};
 end
-
 stackedPulseSum = 0;
 
+%aquire in loop
 for ii = 1:numAquisitions
 
 fprintf('   Aquiring: %i/%i\n',ii,numAquisitions)
@@ -105,6 +104,7 @@ fprintf('   Aquiring: %i/%i\n',ii,numAquisitions)
 %turn on burst gen
 VISA_control_NB('SDG_2000X', addr,'output','on',1);
 
+%init capture flags
 captureSuccess = 0;
 dacReadFailures = 0;
 
